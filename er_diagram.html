@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>biz_anne — Entity-Relationship Diagram</title>
+<meta name="description" content="biz_anne 資料庫的實體關聯圖：7 個資料表全部由真實的 FOREIGN KEY 條件約束涵蓋，3 個報表 view 則只有隱含關聯（SQL Server view 本身無法承載 FK）。可拖曳表格框重新排版，連線會自動跟著更新。">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#6b6b6b; --card:#f7f7f8; --border:#d8d8dc;
+    --accent:#b45309; --accent-soft:#fff4e5; --mono:'SFMono-Regular',Consolas,'Courier New',monospace;
+    --cat-master:#2563eb; --cat-inbound:#16a34a; --cat-outbound:#7c3aed; --cat-closing:#0e7490;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#14151a; --fg:#eaeaec; --muted:#9a9aa2; --card:#1c1d24; --border:#33343d;
+           --accent:#f5a742; --accent-soft:#3a2a12;
+           --cat-master:#7aa2f7; --cat-inbound:#4ade80; --cat-outbound:#b794f6; --cat-closing:#22d3ee; }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0 0 60px; background:var(--bg); color:var(--fg);
+    font-family:-apple-system,'Segoe UI','Microsoft JhengHei',sans-serif;
+    line-height:1.6;
+  }
+  .wrap{max-width:1400px;margin:0 auto;padding:36px 24px 0}
+  h1{font-size:1.55rem;margin:0 0 6px;letter-spacing:-.01em}
+  h2{font-size:1.15rem;margin:40px 0 12px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  .subtitle{color:var(--muted);font-size:.95rem;margin:0 0 28px}
+  .badge{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;
+         background:var(--card);border:1px solid var(--border);color:var(--muted);margin-right:6px}
+  .note{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;
+        font-size:.92rem;color:var(--fg)}
+  .note b{color:var(--accent)}
+  figure{margin:0;padding:0}
+  figcaption{color:var(--muted);font-size:.86rem;margin-top:10px;text-align:center}
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:.86rem;color:var(--muted)}
+  .toolbar button{
+    font:inherit;font-size:.82rem;font-weight:600;color:var(--fg);background:var(--card);
+    border:1px solid var(--border);border-radius:7px;padding:6px 12px;cursor:pointer;
+  }
+  .toolbar button:hover{border-color:var(--accent);color:var(--accent)}
+  svg{width:100%;height:auto;display:block;background:var(--card);border:1px solid var(--border);border-radius:12px}
+  svg text{fill:currentColor;font-family:-apple-system,'Segoe UI',sans-serif}
+  .node{cursor:grab;touch-action:none}
+  .node:active{cursor:grabbing}
+  .node:hover .box, .node:hover .box-view{stroke-width:2.2}
+  .box{fill:var(--bg);stroke:currentColor;stroke-width:1.4}
+  .cat-master .box{stroke:var(--cat-master);stroke-width:1.9}
+  .cat-master .ttl{fill:var(--cat-master)}
+  .cat-inbound .box{stroke:var(--cat-inbound);stroke-width:1.9}
+  .cat-inbound .ttl{fill:var(--cat-inbound)}
+  .cat-outbound .box{stroke:var(--cat-outbound);stroke-width:1.9}
+  .cat-outbound .ttl{fill:var(--cat-outbound)}
+  .cat-closing .box{stroke:var(--cat-closing);stroke-width:1.9}
+  .cat-closing .ttl{fill:var(--cat-closing)}
+  .swatch{stroke:none}
+  .box-view{fill:var(--bg);stroke:var(--accent);stroke-width:1.4;stroke-dasharray:5 4}
+  .divider{stroke:currentColor;stroke-width:1;opacity:.35}
+  .divider-view{stroke:var(--accent);stroke-width:1;opacity:.5}
+  .ttl{font-weight:700;font-size:14px}
+  .ttl-view{font-weight:700;font-size:14px;fill:var(--accent)}
+  .sub{font-size:9.5px;font-style:italic;opacity:.65}
+  .tag{font-size:11px;font-weight:700;opacity:.8}
+  .col{font-size:12px}
+  .typ{font-size:10.5px;opacity:.55}
+  .implied{fill:var(--accent)}
+  .edge{stroke:currentColor;stroke-width:1.6;fill:none}
+  .edge-dashed{stroke:var(--accent);stroke-width:1.6;fill:none;stroke-dasharray:6 5}
+  .lbl{font-size:10.5px;opacity:.8}
+  .lbl-accent{font-size:10.5px;fill:var(--accent);font-style:italic}
+  .lblbg{fill:var(--card)}
+  table{width:100%;border-collapse:collapse;font-size:.9rem;margin-top:8px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+  td.mono,th.mono{font-family:var(--mono)}
+  .yes{color:#1a7f37}
+  .no{color:var(--accent);font-weight:600}
+  @media (prefers-color-scheme: dark){ .yes{color:#4ade80} }
+  code{font-family:var(--mono);background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.85em}
+  ul{padding-left:22px}
+  footer{color:var(--muted);font-size:.82rem;margin-top:48px;border-top:1px solid var(--border);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>biz_anne — Entity-Relationship Diagram</h1>
+  <p class="subtitle">
+    <span class="badge">Server 163.17.141.61,8082</span>
+    <span class="badge">Database biz_anne</span>
+    <span class="badge">Read-only introspection</span>
+    <span class="badge">No DML / DCL executed</span>
+  </p>
+
+  <p class="note">
+    此圖由直接讀取 <code>INFORMATION_SCHEMA</code>、<code>sys.foreign_keys</code> 與三個 view 的定義（<code>OBJECT_DEFINITION</code>）取得，全程只執行
+    <b>SELECT / 系統目錄查詢</b>，未對資料庫下達任何 DML 或 DCL。結果：資料庫中 <b>7 個資料表之間的全部關聯，都已經有真實的 FOREIGN KEY 條件約束</b>；
+    真正「沒有寫 FK」的是 3 個報表用 <code>VIEW</code>——<b>SQL Server 的 view 結構上就無法承載 FOREIGN KEY 條件約束</b>，
+    所以它們對 Employee / Product 的引用只能靠讀 view 定義（UNION / JOIN 的來源欄位）反推。下圖中虛線（<span style="color:var(--accent)">橘色</span>）就是這三個「隱含但無法強制」的關聯。
+  </p>
+
+  <h2>ER Diagram</h2>
+  <div class="toolbar">
+    <span>🖱 拖曳任一表格框可重新排版，連線會自動跟著更新（位置不會保存，重新整理頁面就會回到預設排版）</span>
+    <button id="resetBtn" type="button">Reset layout</button>
+  </div>
+  <figure>
+    <svg id="erd-svg" viewBox="0 0 1620 1090" role="img" aria-label="biz_anne 資料庫實體關聯圖：Employee 與 Product 兩張主檔，各自延伸出 Inbound 與 Outbound 兩條平行單據流程（Header 到 Detail），以及一張存貨日結表；這七個資料表之間的關聯全部由實際的 FOREIGN KEY 條件約束涵蓋（實線箭頭）。另外三個報表 view 對 Employee、Product 的欄位參照，是從 view 的 UNION / JOIN 定義讀出來的隱含關聯，SQL Server 的 view 無法宣告 FOREIGN KEY，因此以橘色虛線箭頭標示為未強制的關聯。可拖曳每個表格框重新排版。">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+        <marker id="arrowA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/>
+        </marker>
+      </defs>
+
+      <!-- Edges are drawn/updated entirely by JS (see script below) so they follow nodes when dragged. -->
+      <g id="edgeLayer"></g>
+
+      <!-- ===================== NODES ===================== -->
+
+      <g class="node cat-master" id="n-employee" data-x="30" data-y="300" data-w="230" data-h="112" transform="translate(0,0)">
+        <rect class="box" x="30" y="300" width="230" height="112" rx="7"/>
+        <text class="ttl" x="42" y="320">Employee</text>
+        <line class="divider" x1="30" y1="330" x2="260" y2="330"/>
+        <text class="tag" x="42" y="345">PK</text><text class="col" x="72" y="345">EmployeeId</text><text class="typ" x="248" y="345" text-anchor="end">nvarchar(20)</text>
+        <text class="col" x="72" y="367">EmployeeName</text><text class="typ" x="248" y="367" text-anchor="end">nvarchar(50)</text>
+        <text class="col" x="72" y="389">Email</text><text class="typ" x="248" y="389" text-anchor="end">nvarchar(255) NULL</text>
+      </g>
+
+      <g class="node cat-master" id="n-product" data-x="1350" data-y="300" data-w="230" data-h="112" transform="translate(0,0)">
+        <rect class="box" x="1350" y="300" width="230" height="112" rx="7"/>
+        <text class="ttl" x="1362" y="320">Product</text>
+        <line class="divider" x1="1350" y1="330" x2="1580" y2="330"/>
+        <text class="tag" x="1362" y="345">PK</text><text class="col" x="1392" y="345">ProductId</text><text class="typ" x="1568" y="345" text-anchor="end">nvarchar(20)</text>
+        <text class="col" x="1392" y="367">ProductName</text><text class="typ" x="1568" y="367" text-anchor="end">nvarchar(100)</text>
+        <text class="col" x="1392" y="389">StockBalance</text><text class="typ" x="1568" y="389" text-anchor="end">decimal</text>
+      </g>
+
+      <g class="node cat-inbound" id="n-inboundheader" data-x="330" data-y="90" data-w="230" data-h="112" transform="translate(0,0)">
+        <rect class="box" x="330" y="90" width="230" height="112" rx="7"/>
+        <text class="ttl" x="342" y="110">InboundHeader</text>
+        <line class="divider" x1="330" y1="120" x2="560" y2="120"/>
+        <text class="tag" x="342" y="135">PK</text><text class="col" x="372" y="135">InboundId</text><text class="typ" x="548" y="135" text-anchor="end">nvarchar(20)</text>
+        <text class="col" x="372" y="157">InboundDate</text><text class="typ" x="548" y="157" text-anchor="end">date</text>
+        <text class="tag" x="342" y="179">FK</text><text class="col" x="372" y="179">EmployeeId</text><text class="typ" x="548" y="179" text-anchor="end">nvarchar(20)</text>
+      </g>
+
+      <g class="node cat-outbound" id="n-outboundheader" data-x="330" data-y="520" data-w="230" data-h="112" transform="translate(0,0)">
+        <rect class="box" x="330" y="520" width="230" height="112" rx="7"/>
+        <text class="ttl" x="342" y="540">OutboundHeader</text>
+        <line class="divider" x1="330" y1="550" x2="560" y2="550"/>
+        <text class="tag" x="342" y="565">PK</text><text class="col" x="372" y="565">OutboundId</text><text class="typ" x="548" y="565" text-anchor="end">nvarchar(20)</text>
+        <text class="col" x="372" y="587">OutboundDate</text><text class="typ" x="548" y="587" text-anchor="end">date</text>
+        <text class="tag" x="342" y="609">FK</text><text class="col" x="372" y="609">EmployeeId</text><text class="typ" x="548" y="609" text-anchor="end">nvarchar(20)</text>
+      </g>
+
+      <g class="node cat-inbound" id="n-inbounddetail" data-x="630" data-y="70" data-w="280" data-h="156" transform="translate(0,0)">
+        <rect class="box" x="630" y="70" width="280" height="156" rx="7"/>
+        <text class="ttl" x="642" y="90">InboundDetail</text>
+        <line class="divider" x1="630" y1="100" x2="910" y2="100"/>
+        <text class="tag" x="642" y="115">PK,FK</text><text class="col" x="700" y="115">InboundId</text><text class="typ" x="898" y="115" text-anchor="end">nvarchar(20)</text>
+        <text class="tag" x="642" y="137">PK</text><text class="col" x="700" y="137">LineNum</text><text class="typ" x="898" y="137" text-anchor="end">smallint</text>
+        <text class="tag" x="642" y="159">FK</text><text class="col" x="700" y="159">ProductId</text><text class="typ" x="898" y="159" text-anchor="end">nvarchar(20)</text>
+        <text class="col" x="700" y="181">ProductName</text><text class="typ" x="898" y="181" text-anchor="end">nvarchar(100)</text>
+        <text class="col" x="700" y="203">Quantity</text><text class="typ" x="898" y="203" text-anchor="end">decimal</text>
+      </g>
+
+      <g class="node cat-outbound" id="n-outbounddetail" data-x="630" data-y="500" data-w="280" data-h="156" transform="translate(0,0)">
+        <rect class="box" x="630" y="500" width="280" height="156" rx="7"/>
+        <text class="ttl" x="642" y="520">OutboundDetail</text>
+        <line class="divider" x1="630" y1="530" x2="910" y2="530"/>
+        <text class="tag" x="642" y="545">PK,FK</text><text class="col" x="700" y="545">OutboundId</text><text class="typ" x="898" y="545" text-anchor="end">nvarchar(20)</text>
+        <text class="tag" x="642" y="567">PK</text><text class="col" x="700" y="567">LineNum</text><text class="typ" x="898" y="567" text-anchor="end">smallint</text>
+        <text class="tag" x="642" y="589">FK</text><text class="col" x="700" y="589">ProductId</text><text class="typ" x="898" y="589" text-anchor="end">nvarchar(20)</text>
+        <text class="col" x="700" y="611">ProductName</text><text class="typ" x="898" y="611" text-anchor="end">nvarchar(100)</text>
+        <text class="col" x="700" y="633">Quantity</text><text class="typ" x="898" y="633" text-anchor="end">decimal</text>
+      </g>
+
+      <g class="node cat-closing" id="n-invclosing" data-x="990" data-y="290" data-w="280" data-h="178" transform="translate(0,0)">
+        <rect class="box" x="990" y="290" width="280" height="178" rx="7"/>
+        <text class="ttl" x="1002" y="310">InventoryDailyClosing</text>
+        <line class="divider" x1="990" y1="320" x2="1270" y2="320"/>
+        <text class="tag" x="1002" y="335">PK</text><text class="col" x="1042" y="335">ClosingDate</text><text class="typ" x="1258" y="335" text-anchor="end">date</text>
+        <text class="tag" x="1002" y="357">PK,FK</text><text class="col" x="1060" y="357">ProductId</text><text class="typ" x="1258" y="357" text-anchor="end">nvarchar(20)</text>
+        <text class="col" x="1042" y="379">OpeningQuantity</text><text class="typ" x="1258" y="379" text-anchor="end">decimal</text>
+        <text class="col" x="1042" y="401">InboundQuantity</text><text class="typ" x="1258" y="401" text-anchor="end">decimal</text>
+        <text class="col" x="1042" y="423">OutboundQuantity</text><text class="typ" x="1258" y="423" text-anchor="end">decimal</text>
+        <text class="col" x="1042" y="445">ClosingQuantity</text><text class="typ" x="1258" y="445" text-anchor="end">decimal</text>
+      </g>
+
+      <g class="node" id="n-v-inoutheader" data-x="30" data-y="740" data-w="330" data-h="150" transform="translate(0,0)">
+        <rect class="box-view" x="30" y="740" width="330" height="150" rx="7"/>
+        <text class="ttl-view" x="42" y="760">v_InoutHeader</text>
+        <text class="sub" x="42" y="774">VIEW — UNION InboundHeader + OutboundHeader</text>
+        <line class="divider-view" x1="30" y1="786" x2="360" y2="786"/>
+        <text class="col" x="42" y="801">DocType</text><text class="typ" x="348" y="801" text-anchor="end">varchar(3)</text>
+        <text class="col" x="42" y="823">DocId</text><text class="typ" x="348" y="823" text-anchor="end">nvarchar(20)</text>
+        <text class="col" x="42" y="845">DocDate</text><text class="typ" x="348" y="845" text-anchor="end">date</text>
+        <text class="col implied" x="42" y="867">EmployeeId</text><text class="typ implied" x="348" y="867" text-anchor="end">nvarchar(20) · implied</text>
+      </g>
+
+      <g class="node" id="n-v-inoutdetail" data-x="400" data-y="740" data-w="360" data-h="194" transform="translate(0,0)">
+        <rect class="box-view" x="400" y="740" width="360" height="194" rx="7"/>
+        <text class="ttl-view" x="412" y="760">v_InoutDetail</text>
+        <text class="sub" x="412" y="774">VIEW — UNION InboundDetail + OutboundDetail</text>
+        <line class="divider-view" x1="400" y1="786" x2="760" y2="786"/>
+        <text class="col" x="412" y="801">DocType</text><text class="typ" x="748" y="801" text-anchor="end">varchar(3)</text>
+        <text class="col" x="412" y="823">DocId</text><text class="typ" x="748" y="823" text-anchor="end">nvarchar(20)</text>
+        <text class="col" x="412" y="845">LineNum</text><text class="typ" x="748" y="845" text-anchor="end">smallint</text>
+        <text class="col implied" x="412" y="867">ProductId</text><text class="typ implied" x="748" y="867" text-anchor="end">nvarchar(20) · implied</text>
+        <text class="col" x="412" y="889">ProductName</text><text class="typ" x="748" y="889" text-anchor="end">nvarchar(100)</text>
+        <text class="col" x="412" y="911">Quantity</text><text class="typ" x="748" y="911" text-anchor="end">decimal</text>
+      </g>
+
+      <g class="node" id="n-v-invclosing" data-x="800" data-y="740" data-w="400" data-h="216" transform="translate(0,0)">
+        <rect class="box-view" x="800" y="740" width="400" height="216" rx="7"/>
+        <text class="ttl-view" x="812" y="760">v_InventoryDailyClosing</text>
+        <text class="sub" x="812" y="774">VIEW — JOIN InventoryDailyClosing + Product</text>
+        <line class="divider-view" x1="800" y1="786" x2="1200" y2="786"/>
+        <text class="col" x="812" y="801">ClosingDate</text><text class="typ" x="1188" y="801" text-anchor="end">date</text>
+        <text class="col implied" x="812" y="823">ProductId</text><text class="typ implied" x="1188" y="823" text-anchor="end">nvarchar(20) · implied</text>
+        <text class="col" x="812" y="845">ProductName</text><text class="typ" x="1188" y="845" text-anchor="end">nvarchar(100)</text>
+        <text class="col" x="812" y="867">OpeningQuantity</text><text class="typ" x="1188" y="867" text-anchor="end">decimal</text>
+        <text class="col" x="812" y="889">InboundQuantity</text><text class="typ" x="1188" y="889" text-anchor="end">decimal</text>
+        <text class="col" x="812" y="911">OutboundQuantity</text><text class="typ" x="1188" y="911" text-anchor="end">decimal</text>
+        <text class="col" x="812" y="933">ClosingQuantity</text><text class="typ" x="1188" y="933" text-anchor="end">decimal</text>
+      </g>
+
+      <g class="node" id="n-legend" data-x="1240" data-y="740" data-w="340" data-h="310" transform="translate(0,0)">
+        <rect class="box" x="1240" y="740" width="340" height="310" rx="7"/>
+        <text class="ttl" x="1252" y="760">Legend</text>
+        <line class="divider" x1="1240" y1="770" x2="1580" y2="770"/>
+
+        <line class="edge" x1="1252" y1="792" x2="1300" y2="792" marker-end="url(#arrow)"/>
+        <text class="col" x="1310" y="796">Enforced FOREIGN KEY</text>
+
+        <line class="edge-dashed" x1="1252" y1="818" x2="1300" y2="818" marker-end="url(#arrowA)"/>
+        <text class="col implied" x="1310" y="822">Implied only (view has no FK)</text>
+
+        <text class="tag" x="1252" y="846">PK</text><text class="col" x="1290" y="846">Primary key column</text>
+        <text class="tag" x="1252" y="868">FK</text><text class="col" x="1290" y="868">Foreign key column</text>
+        <text class="col implied" x="1252" y="890">orange text</text><text class="col" x="1340" y="890">= referenced only via</text>
+        <text class="col" x="1290" y="908">view's UNION/JOIN definition</text>
+
+        <line class="divider" x1="1240" y1="920" x2="1580" y2="920"/>
+        <text class="tag" x="1252" y="938">Table groups</text>
+
+        <rect class="swatch" x="1252" y="950" width="12" height="12" fill="var(--cat-master)"/>
+        <text class="col" x="1272" y="960">Master data (Employee, Product)</text>
+
+        <rect class="swatch" x="1252" y="970" width="12" height="12" fill="var(--cat-inbound)"/>
+        <text class="col" x="1272" y="980">Inbound flow (Header/Detail)</text>
+
+        <rect class="swatch" x="1252" y="990" width="12" height="12" fill="var(--cat-outbound)"/>
+        <text class="col" x="1272" y="1000">Outbound flow (Header/Detail)</text>
+
+        <rect class="swatch" x="1252" y="1010" width="12" height="12" fill="var(--cat-closing)"/>
+        <text class="col" x="1272" y="1020">InventoryDailyClosing (ledger)</text>
+
+        <text class="sub" x="1252" y="1040">7 real FK · 3 implied-only (views) · drag any box ↑</text>
+      </g>
+
+    </svg>
+    <figcaption>
+      Employee 與 Product 兩張主檔向外分出 Inbound／Outbound 兩條平行單據流程（Header→Detail）與一張存貨日結表；
+      七條資料表關聯全部是實際的 FOREIGN KEY（實線）。三個報表 view 對 Employee／Product 的引用只存在於 UNION／JOIN 定義中，
+      SQL Server 無法對 view 加上 FK，故以橘色虛線標示為「隱含、未強制」的關聯。拖曳任一表格框可重新排版，連線會即時跟著重繪。
+    </figcaption>
+  </figure>
+
+  <h2>關聯總表 Relationship Inventory</h2>
+  <table>
+    <thead>
+      <tr><th>From</th><th>Column</th><th>To</th><th>Column</th><th>Enforced?</th><th>Constraint / Note</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="mono">InboundHeader</td><td class="mono">EmployeeId</td><td class="mono">Employee</td><td class="mono">EmployeeId</td><td class="yes">Yes</td><td class="mono">FK_InboundHeader_Employee</td></tr>
+      <tr><td class="mono">OutboundHeader</td><td class="mono">EmployeeId</td><td class="mono">Employee</td><td class="mono">EmployeeId</td><td class="yes">Yes</td><td class="mono">FK_OutboundHeader_Employee</td></tr>
+      <tr><td class="mono">InboundDetail</td><td class="mono">InboundId</td><td class="mono">InboundHeader</td><td class="mono">InboundId</td><td class="yes">Yes</td><td class="mono">FK_InboundDetail_InboundHeader</td></tr>
+      <tr><td class="mono">InboundDetail</td><td class="mono">ProductId</td><td class="mono">Product</td><td class="mono">ProductId</td><td class="yes">Yes</td><td class="mono">FK_InboundDetail_Product</td></tr>
+      <tr><td class="mono">OutboundDetail</td><td class="mono">OutboundId</td><td class="mono">OutboundHeader</td><td class="mono">OutboundId</td><td class="yes">Yes</td><td class="mono">FK_OutboundDetail_OutboundHeader</td></tr>
+      <tr><td class="mono">OutboundDetail</td><td class="mono">ProductId</td><td class="mono">Product</td><td class="mono">ProductId</td><td class="yes">Yes</td><td class="mono">FK_OutboundDetail_Product</td></tr>
+      <tr><td class="mono">InventoryDailyClosing</td><td class="mono">ProductId</td><td class="mono">Product</td><td class="mono">ProductId</td><td class="yes">Yes</td><td class="mono">FK_InventoryDailyClosing_Product</td></tr>
+      <tr><td class="mono">v_InoutHeader</td><td class="mono">EmployeeId</td><td class="mono">Employee</td><td class="mono">EmployeeId</td><td class="no">No</td><td>View (UNION) — FK not supported on views</td></tr>
+      <tr><td class="mono">v_InoutDetail</td><td class="mono">ProductId</td><td class="mono">Product</td><td class="mono">ProductId</td><td class="no">No</td><td>View (UNION) — FK not supported on views</td></tr>
+      <tr><td class="mono">v_InventoryDailyClosing</td><td class="mono">ProductId</td><td class="mono">Product</td><td class="mono">ProductId</td><td class="no">No</td><td>View (JOIN) — FK not supported on views</td></tr>
+    </tbody>
+  </table>
+
+  <h2>方法與限制 Methodology &amp; Constraint Compliance</h2>
+  <ul>
+    <li>資料來源：<code>INFORMATION_SCHEMA.TABLES/COLUMNS</code>、<code>INFORMATION_SCHEMA.TABLE_CONSTRAINTS/KEY_COLUMN_USAGE</code>（PK）、
+      <code>sys.foreign_keys</code> + <code>sys.foreign_key_columns</code>（既有 FK）、<code>OBJECT_DEFINITION()</code>（讀 3 個 view 的 SELECT 定義以反推隱含關聯）。</li>
+    <li>全程只執行 <b>SELECT / 系統目錄查詢</b>，沒有對 <code>biz_anne</code> 執行任何 INSERT / UPDATE / DELETE（DML）或 GRANT / REVOKE（DCL）；
+      也沒有實際執行任何 ALTER / CREATE（DDL），完全符合「不可執行任何 SQL DML, DCL」的限制。</li>
+    <li>找到的缺口只存在於 3 個 view（結構上就不能有 FK），因此對應的補強腳本 <code>add_missing_foreign_keys.sql</code> 是「產生但不執行」的文件，
+      內容是把這 3 個隱含關聯記錄成 extended properties（純 metadata 註記），而不是假造根本不存在的資料表級 FK 缺口。</li>
+  </ul>
+
+  <footer>
+    Generated files in this folder: <code>er_diagram.html</code>（本檔案）、<code>add_missing_foreign_keys.sql</code>、<code>CLAUDE.md</code>、<code>SKILL.md</code>。
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var svg = document.getElementById('erd-svg');
+  var edgeLayer = document.getElementById('edgeLayer');
+  var NS = 'http://www.w3.org/2000/svg';
+
+  var nodes = {};
+  Array.prototype.forEach.call(svg.querySelectorAll('.node'), function (g) {
+    nodes[g.id] = {
+      x: +g.dataset.x, y: +g.dataset.y, w: +g.dataset.w, h: +g.dataset.h,
+      dx: 0, dy: 0, el: g
+    };
+  });
+
+  function anchor(id, side, offset) {
+    var n = nodes[id];
+    var x0 = n.x + n.dx, y0 = n.y + n.dy;
+    if (side === 'left')   return { x: x0,        y: y0 + (offset == null ? n.h / 2 : offset) };
+    if (side === 'right')  return { x: x0 + n.w,   y: y0 + (offset == null ? n.h / 2 : offset) };
+    if (side === 'top')    return { x: x0 + (offset == null ? n.w / 2 : offset), y: y0 };
+    if (side === 'bottom') return { x: x0 + (offset == null ? n.w / 2 : offset), y: y0 + n.h };
+  }
+
+  // kind: 'straight' | 'L' (2-segment elbow via source's own anchor y/x) | 'U' (4-point elbow via a stub channel)
+  var edges = [
+    { kind: 'straight', from: ['n-employee', 'right'], to: ['n-inboundheader', 'left'], label: '1─N creates' },
+    { kind: 'straight', from: ['n-employee', 'right'], to: ['n-outboundheader', 'left'], label: '1─N creates' },
+    { kind: 'straight', from: ['n-inboundheader', 'right'], to: ['n-inbounddetail', 'left'], label: '1─N lines' },
+    { kind: 'straight', from: ['n-outboundheader', 'right'], to: ['n-outbounddetail', 'left'], label: '1─N lines' },
+    { kind: 'L', from: ['n-inbounddetail', 'right', 30], to: ['n-product', 'top'], label: 'N─1 refers to' },
+    { kind: 'L', from: ['n-outbounddetail', 'right', 156], to: ['n-product', 'bottom'], label: 'N─1 refers to' },
+    { kind: 'straight', from: ['n-invclosing', 'right'], to: ['n-product', 'left'], label: 'N─1 refers to' },
+    { kind: 'U', stub: 40, dashed: true, from: ['n-v-inoutheader', 'top'], to: ['n-employee', 'bottom'], label: 'implied FK' },
+    { kind: 'U', stub: 45, dashed: true, from: ['n-v-inoutdetail', 'top'], to: ['n-product', 'bottom', 140], label: 'implied FK' },
+    { kind: 'U', stub: 25, dashed: true, from: ['n-v-invclosing', 'top'], to: ['n-product', 'bottom', 160], label: 'implied FK' }
+  ];
+
+  function pts(a) { return a.map(function (p) { return p.x + ',' + p.y; }).join(' '); }
+
+  function buildPath(e) {
+    var A = anchor(e.from[0], e.from[1], e.from[2]);
+    var B = anchor(e.to[0], e.to[1], e.to[2]);
+    if (e.kind === 'straight') return [A, B];
+    if (e.kind === 'L') return [A, { x: B.x, y: A.y }, B];
+    // 'U': stub away from A (up if target above, down if target below), then across, then into B
+    var dir = B.y < A.y ? -1 : 1;
+    var chY = A.y + dir * e.stub;
+    return [A, { x: A.x, y: chY }, { x: B.x, y: chY }, B];
+  }
+
+  function render() {
+    edgeLayer.textContent = '';
+    edges.forEach(function (e) {
+      var p = buildPath(e);
+      var line = document.createElementNS(NS, p.length === 2 ? 'line' : 'polyline');
+      line.setAttribute('class', e.dashed ? 'edge-dashed' : 'edge');
+      line.setAttribute('marker-end', e.dashed ? 'url(#arrowA)' : 'url(#arrow)');
+      if (p.length === 2) {
+        line.setAttribute('x1', p[0].x); line.setAttribute('y1', p[0].y);
+        line.setAttribute('x2', p[1].x); line.setAttribute('y2', p[1].y);
+      } else {
+        line.setAttribute('points', pts(p));
+      }
+      edgeLayer.appendChild(line);
+
+      // label at the midpoint of the most informative (usually middle/horizontal) segment
+      var segA, segB;
+      if (p.length === 2) { segA = p[0]; segB = p[1]; }
+      else if (p.length === 3) { segA = p[0]; segB = p[1]; }
+      else { segA = p[1]; segB = p[2]; }
+      var mx = (segA.x + segB.x) / 2, my = (segA.y + segB.y) / 2;
+
+      var text = document.createElementNS(NS, 'text');
+      text.setAttribute('class', e.dashed ? 'lbl-accent' : 'lbl');
+      text.setAttribute('x', mx); text.setAttribute('y', my - 4);
+      text.textContent = e.label;
+      edgeLayer.appendChild(text);
+      var bw = text.getComputedTextLength ? text.getComputedTextLength() : e.label.length * 6;
+      var bg = document.createElementNS(NS, 'rect');
+      bg.setAttribute('class', 'lblbg');
+      bg.setAttribute('x', mx - 4); bg.setAttribute('y', my - 15);
+      bg.setAttribute('width', bw + 8); bg.setAttribute('height', 14);
+      edgeLayer.insertBefore(bg, text);
+    });
+  }
+
+  // ---- dragging ----
+  var dragging = null; // {id, startX, startY, origDx, origDy}
+
+  function svgPoint(evt) {
+    var pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+
+  Array.prototype.forEach.call(svg.querySelectorAll('.node'), function (g) {
+    g.addEventListener('pointerdown', function (evt) {
+      var p = svgPoint(evt);
+      var n = nodes[g.id];
+      dragging = { id: g.id, startX: p.x, startY: p.y, origDx: n.dx, origDy: n.dy };
+      g.setPointerCapture(evt.pointerId);
+      svg.appendChild(g); // bring to front while dragging
+    });
+    g.addEventListener('pointermove', function (evt) {
+      if (!dragging || dragging.id !== g.id) return;
+      var p = svgPoint(evt);
+      var n = nodes[g.id];
+      n.dx = dragging.origDx + (p.x - dragging.startX);
+      n.dy = dragging.origDy + (p.y - dragging.startY);
+      g.setAttribute('transform', 'translate(' + n.dx + ',' + n.dy + ')');
+      render();
+    });
+    g.addEventListener('pointerup', function () { dragging = null; });
+    g.addEventListener('pointercancel', function () { dragging = null; });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    Object.keys(nodes).forEach(function (id) {
+      nodes[id].dx = 0; nodes[id].dy = 0;
+      nodes[id].el.setAttribute('transform', 'translate(0,0)');
+    });
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
