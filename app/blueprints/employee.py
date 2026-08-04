@@ -1,9 +1,14 @@
+import re
+
 import pyodbc
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.db import execute, query_all, query_one
 
 bp = Blueprint("employee", __name__, url_prefix="/employee")
+
+PASSWORD_RE = re.compile(r"^[A-Za-z0-9]{6}$")
+DEFAULT_PASSWORD = "123456"
 
 
 @bp.route("/")
@@ -18,20 +23,24 @@ def create_view():
         employee_id = request.form["employee_id"].strip()
         name = request.form["employee_name"].strip()
         email = request.form["email"].strip() or None
+        password = request.form.get("password", "").strip() or DEFAULT_PASSWORD
         if not employee_id or not name:
             flash("員工編號與姓名為必填", "error")
             return render_template("employee/form.html", mode="new", form=request.form)
+        if not PASSWORD_RE.match(password):
+            flash("密碼必須是 6 碼英數字", "error")
+            return render_template("employee/form.html", mode="new", form=request.form)
         try:
             execute(
-                "INSERT INTO Employee (EmployeeId, EmployeeName, Email) VALUES (?, ?, ?)",
-                (employee_id, name, email),
+                "INSERT INTO Employee (EmployeeId, EmployeeName, Email, Password) VALUES (?, ?, ?, ?)",
+                (employee_id, name, email, password),
             )
         except pyodbc.IntegrityError:
             flash(f"員工編號 {employee_id} 已存在", "error")
             return render_template("employee/form.html", mode="new", form=request.form)
         flash("新增成功", "success")
         return redirect(url_for("employee.list_view"))
-    return render_template("employee/form.html", mode="new", form={})
+    return render_template("employee/form.html", mode="new", form={}, default_password=DEFAULT_PASSWORD)
 
 
 @bp.route("/<employee_id>/edit", methods=["GET", "POST"])
@@ -44,12 +53,16 @@ def edit_view(employee_id):
     if request.method == "POST":
         name = request.form["employee_name"].strip()
         email = request.form["email"].strip() or None
+        password = request.form.get("password", "").strip()
         if not name:
             flash("姓名為必填", "error")
             return render_template("employee/form.html", mode="edit", form=request.form, employee_id=employee_id)
+        if not PASSWORD_RE.match(password):
+            flash("密碼必須是 6 碼英數字", "error")
+            return render_template("employee/form.html", mode="edit", form=request.form, employee_id=employee_id)
         execute(
-            "UPDATE Employee SET EmployeeName = ?, Email = ? WHERE EmployeeId = ?",
-            (name, email, employee_id),
+            "UPDATE Employee SET EmployeeName = ?, Email = ?, Password = ? WHERE EmployeeId = ?",
+            (name, email, password, employee_id),
         )
         flash("更新成功", "success")
         return redirect(url_for("employee.list_view"))

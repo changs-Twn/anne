@@ -19,6 +19,14 @@
     <label class="form-label">Email</label>
     <input type="email" name="email" class="form-control" value="{{ form.Email or form.email or '' }}" maxlength="255">
   </div>
+  <div class="mb-3">
+    <label class="form-label">密碼</label>
+    <input type="text" name="password" class="form-control"
+           value="{{ form.Password or form.password or default_password or '' }}"
+           required maxlength="6" minlength="6" pattern="[A-Za-z0-9]{6}"
+           title="必須是 6 碼英文字母或數字">
+    <div class="form-text">6 碼英數字，新增時預設 123456。</div>
+  </div>
   <button type="submit" class="btn btn-primary">儲存</button>
   <a href="{{ url_for('employee.list_view') }}" class="btn btn-secondary">取消</a>
 </form>

@@ -41,6 +41,12 @@ Employee ──┬─< InboundHeader  ──< InboundDetail >── Product
 **運算式帳本**，不要手動 INSERT / UPDATE 它，只要對 `InboundDetail` / `OutboundDetail` 做異動，
 trigger 會自動算好 Opening/Inbound/Outbound/Closing 並遞延到後面的日期。
 
+**`Employee.Password`**（Mini ERP 開發期間新增的欄位，`er_diagram.html`/
+`add_missing_foreign_keys.sql` 是舊快照、還沒反映這個欄位，不用回頭改那兩份唯讀交付物）：
+`CHAR(6) NOT NULL DEFAULT '123456'`，CHECK constraint `CK_Employee_Password` 強制內容只能是
+`[0-9A-Za-z]`（且必須恰好 6 個非空白字元，否則 `CHAR` 補的空白會被 CHECK 擋下）。新增/編輯員工
+的表單、`app/blueprints/employee.py` 都已經同步支援這個欄位。
+
 ## 已知坑
 
 - **中文亂碼**：這台機器的 git-bash `stdout` 預設編碼是 `cp950`，用 Python 印中文欄位（如
