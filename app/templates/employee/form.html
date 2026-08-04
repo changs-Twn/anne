@@ -2,7 +2,7 @@
 {% block title %}{{ '新增員工' if mode == 'new' else '編輯員工' }}{% endblock %}
 {% block content %}
 <h3>{{ '新增員工' if mode == 'new' else '編輯員工 ' + employee_id }}</h3>
-<form method="post" class="bg-white p-4 border rounded" style="max-width: 480px;">
+<form method="post" class="bg-white p-4 border rounded" style="max-width: 480px;" autocomplete="off">
   <div class="mb-3">
     <label class="form-label">員工編號</label>
     {% if mode == 'new' %}
@@ -24,7 +24,7 @@
     <input type="text" name="password" class="form-control"
            value="{{ form.Password or form.password or default_password or '' }}"
            required maxlength="6" minlength="6" pattern="[A-Za-z0-9]{6}"
-           title="必須是 6 碼英文字母或數字">
+           title="必須是 6 碼英文字母或數字" autocomplete="off">
     <div class="form-text">6 碼英數字，新增時預設 123456。</div>
   </div>
   <button type="submit" class="btn btn-primary">儲存</button>

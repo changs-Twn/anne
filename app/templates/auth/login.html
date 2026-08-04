@@ -23,14 +23,14 @@
               {% endif %}
             {% endwith %}
 
-            <form method="post">
+            <form method="post" autocomplete="off">
               <div class="mb-3">
                 <label class="form-label">請輸入員工編號</label>
-                <input type="text" name="employee_id" class="form-control" value="{{ employee_id }}" required autofocus maxlength="20">
+                <input type="text" name="employee_id" class="form-control" value="{{ employee_id }}" required autofocus maxlength="20" autocomplete="off">
               </div>
               <div class="mb-3">
                 <label class="form-label">請輸入密碼</label>
-                <input type="password" name="password" class="form-control" required maxlength="20">
+                <input type="password" name="password" class="form-control" required maxlength="20" autocomplete="off">
               </div>
               <button type="submit" class="btn btn-primary w-100">登入</button>
             </form>
