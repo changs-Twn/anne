@@ -7,6 +7,9 @@ description: Use when adding or modifying modules in this Mini ERP Flask app (Pr
 
 這是一個 Flask + SQL Server (`biz_anne`) 的二層選單迷你 ERP。資料表都已存在於資料庫，不要生成 DDL；只透過 `app/db.py` 的 helper 存取。
 
+全站已經有登入檢查（`app/__init__.py` 的 `before_request`，白名單見 `PUBLIC_ENDPOINTS`）。**新增
+blueprint 時不用自己加登入判斷**，只要不是刻意要對外公開的頁面，註冊進 app 就自動被保護。
+
 ## 新增一個「主數據」模組（像 Product/Employee）
 
 1. 在 `app/blueprints/<name>.py` 建立 blueprint，四個路由：`/` (list)、`/new` (GET+POST)、`/<id>/edit` (GET+POST)、`/<id>` (detail，唯讀明細)、`/<id>/delete` (POST)。

@@ -29,6 +29,10 @@
           </li>
           {% endfor %}
         </ul>
+        <span class="navbar-text text-light me-3">{{ session.employee_name }}{% if session.is_super %}（Super）{% endif %}</span>
+        <form method="post" action="{{ url_for('auth.logout') }}" class="d-flex">
+          <button type="submit" class="btn btn-outline-light btn-sm">登出</button>
+        </form>
       </div>
     </div>
   </nav>

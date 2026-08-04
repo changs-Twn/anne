@@ -94,17 +94,30 @@ python run.py                   # http://127.0.0.1:5000
 
 ```
 app/
-  __init__.py          create_app() factory，註冊 blueprints，把 menu.MENU 注入所有 template
+  __init__.py          create_app() factory，註冊 blueprints，把 menu.MENU 注入所有 template，掛全站登入檢查（見下方「登入」）
   config.py             從 .env 讀取設定，組 ODBC 連線字串
   db.py                  pyodbc 連線；query_all()/query_one()/execute()/db_cursor() 是全部 SQL 存取的唯一入口
   menu.py                 二層選單的唯一定義（見下方「選單與路由對照」）
-  blueprints/            每個模組一個檔案，各自管一組路由
-  templates/              依模組分資料夾，base.html 是共用版型（含二層 navbar）
+  blueprints/            每個模組一個檔案，各自管一組路由（auth.py 是登入/登出，其餘都被全站登入檢查保護）
+  templates/              依模組分資料夾，base.html 是共用版型（含二層 navbar），auth/login.html 是獨立頁面不套 base.html
   static/js/detail_lines.js  入庫/出庫表單明細列的新增/刪除
   utils/excel_export.py       export_document()（單據式）/ export_report()（報表式）
   utils/ids.py                 交易單號產生規則：PREFIX + YYYYMMDD + 3碼序號
 sql/seed_test_data.sql   補充測試資料腳本，IF NOT EXISTS 判斷、可重複執行、不刪既有資料
 ```
+
+### 登入
+
+`app/__init__.py` 的 `before_request` hook會擋下所有請求，`session` 沒有 `employee_id` 就導到
+`/login?next=<原本要去的路徑>`；只有 `static`、`auth.login`、`auth.logout` 這三個 endpoint 不受檢查
+（見 `PUBLIC_ENDPOINTS`）。新增 blueprint／路由**不需要自己加登入檢查**，全站已經統一擋在
+`before_request` 這一層。
+
+驗證邏輯在 `app/blueprints/auth.py`：
+- `EmployeeId='Super'` 且 `Password='Super'`（字面值，不查資料庫）→ 視為最高權限登入，`session["is_super"] = True`。
+- 其餘輸入 → 對 `Employee` 表比對 `EmployeeId` + `Password`（就是前面新增的那個 `CHAR(6)` 欄位）。
+- 目前登入只是「關卡」，**沒有做任何功能限制**——不管是不是 Super，登入後都能用全部 CRUD 功能；
+  之後如果要分權限，`session["is_super"]` 已經有了，可以直接拿來在各 blueprint 加判斷。
 
 ### 選單與路由對照
 
