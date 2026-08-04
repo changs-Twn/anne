@@ -10,6 +10,11 @@ description: Use when adding or modifying modules in this Mini ERP Flask app (Pr
 全站已經有登入檢查（`app/__init__.py` 的 `before_request`，白名單見 `PUBLIC_ENDPOINTS`）。**新增
 blueprint 時不用自己加登入判斷**，只要不是刻意要對外公開的頁面，註冊進 app 就自動被保護。
 
+`session["is_super"]` 是唯一的權限旗標（`Super`/`Super` 登入時是 True，其他員工登入是 False）。
+目前只有員工管理模組拿這個 flag 做「只能動自己那筆」的限制（見 `employee.py` 的
+`_can_access()`）——如果之後要幫別的模組加權限限制，**檢查要放在 route function 最前面**，
+不能只在 template 藏按鈕（藏 UI 擋不住直接改網址）。
+
 ## 新增一個「主數據」模組（像 Product/Employee）
 
 1. 在 `app/blueprints/<name>.py` 建立 blueprint，四個路由：`/` (list)、`/new` (GET+POST)、`/<id>/edit` (GET+POST)、`/<id>` (detail，唯讀明細)、`/<id>/delete` (POST)。

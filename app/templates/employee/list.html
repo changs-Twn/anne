@@ -3,7 +3,9 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3>員工管理</h3>
+  {% if session.is_super %}
   <a class="btn btn-primary" href="{{ url_for('employee.create_view') }}">+ 新增員工</a>
+  {% endif %}
 </div>
 <table class="table table-striped table-bordered table-mini-erp bg-white">
   <thead>
@@ -21,12 +23,16 @@
       <td>{{ r.EmployeeName }}</td>
       <td>{{ r.Email or '' }}</td>
       <td>
+        {% if session.is_super or session.employee_id == r.EmployeeId %}
         <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('employee.detail_view', employee_id=r.EmployeeId) }}">明細</a>
         <a class="btn btn-sm btn-outline-primary" href="{{ url_for('employee.edit_view', employee_id=r.EmployeeId) }}">編輯</a>
         <form action="{{ url_for('employee.delete_view', employee_id=r.EmployeeId) }}" method="post" class="d-inline"
               onsubmit="return confirm('確定要刪除員工 {{ r.EmployeeId }} 嗎？');">
           <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
         </form>
+        {% else %}
+        <span class="text-muted">—</span>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}

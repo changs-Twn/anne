@@ -116,8 +116,19 @@ sql/seed_test_data.sql   補充測試資料腳本，IF NOT EXISTS 判斷、可�
 驗證邏輯在 `app/blueprints/auth.py`：
 - `EmployeeId='Super'` 且 `Password='Super'`（字面值，不查資料庫）→ 視為最高權限登入，`session["is_super"] = True`。
 - 其餘輸入 → 對 `Employee` 表比對 `EmployeeId` + `Password`（就是前面新增的那個 `CHAR(6)` 欄位）。
-- 目前登入只是「關卡」，**沒有做任何功能限制**——不管是不是 Super，登入後都能用全部 CRUD 功能；
-  之後如果要分權限，`session["is_super"]` 已經有了，可以直接拿來在各 blueprint 加判斷。
+- `session["is_super"]` 目前只用在員工管理模組的權限判斷（見下一節）；其他模組（物料/入庫/出庫/報表）
+  對所有已登入使用者一視同仁，沒有額外限制。之後如果其他模組也要分權限，一樣是拿這個 flag 判斷。
+
+### 員工管理的存取權限
+
+只有 Super 能看到「+ 新增員工」按鈕、能新增員工（`employee.create_view` 一開頭就擋非 Super）。
+一般使用者只能查看/編輯/刪除**自己那筆**紀錄，其他人的資料一律擋下（`employee.py` 的
+`_can_access(employee_id)` = `session["is_super"] or session["employee_id"] == employee_id`，
+`detail_view`/`edit_view`/`delete_view` 都在最前面呼叫這個檢查）。列表頁 (`employee/list.html`)
+還是顯示全部同事，只是別人那一列的操作按鈕換成 `—`，不能點；直接改網址存取別人的
+`/employee/<id>`、`/employee/<id>/edit`、`/employee/<id>/delete` 一樣會被伺服器端擋下，不是只
+藏 UI。如果使用者刪除的正好是自己的帳號，`delete_view` 會順便清空 session、導回 `/login`
+（帳號都刪了，繼續掛著登入狀態沒意義）。
 
 ### 首次登入改密碼提示
 
