@@ -37,6 +37,11 @@ def create_app():
     def inject_menu():
         return {"menu": MENU}
 
+    @app.context_processor
+    def inject_password_prompt():
+        # 一次性旗標：彈出一次改密碼提示後就清掉，同一次登入不會每頁都跳
+        return {"show_password_prompt": session.pop("prompt_password_change", False)}
+
     @app.route("/")
     def index():
         return redirect(url_for("product.list_view"))

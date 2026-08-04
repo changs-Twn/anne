@@ -119,6 +119,20 @@ sql/seed_test_data.sql   補充測試資料腳本，IF NOT EXISTS 判斷、可�
 - 目前登入只是「關卡」，**沒有做任何功能限制**——不管是不是 Super，登入後都能用全部 CRUD 功能；
   之後如果要分權限，`session["is_super"]` 已經有了，可以直接拿來在各 blueprint 加判斷。
 
+### 首次登入改密碼提示
+
+非 Super 帳號登入時，若密碼仍等於預設值 `123456`（見 `app/blueprints/employee.py` 的
+`DEFAULT_PASSWORD`），會在 `session["prompt_password_change"]` 設一個**一次性旗標**。
+`app/__init__.py` 的 `inject_password_prompt` context processor 用 `session.pop(...)`
+讀取並清除這個旗標，所以登入後**只有第一次載入的頁面**會把 `show_password_prompt` 傳給 template，
+`base.html` 看到這個變數是 True 才會在頁面載入時自動彈出 Bootstrap modal（`#passwordChangeModal`）。
+
+這個提示**可以跳過**（「稍後再說」按鈕純前端 dismiss，不會再打一次後端），純粹提醒、不強制、不像
+`/login` 那樣用 `before_request` 擋。真的要送新密碼是走 `POST /change-password`
+（`auth.change_password`），驗證規則跟員工編輯表單一樣（6 碼英數字 + 兩次輸入要一致），
+成功後直接 `UPDATE Employee SET Password=?`。如果使用者又把密碼改回 `123456`，下次登入一樣會
+再跳出提示——這是預期行為，沒有特別排除。
+
 ### 選單與路由對照
 
 | 第一層 | 第二層 | 路由前綴 | 說明 |
