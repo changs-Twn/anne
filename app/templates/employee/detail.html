@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}員工明細{% endblock %}
+{% block content %}
+<h3>員工明細 - {{ row.EmployeeId }} {{ row.EmployeeName }}</h3>
+<p>Email：{{ row.Email or '(未填)' }}</p>
+
+<h5 class="mt-4">經手單據（唯讀）</h5>
+<table class="table table-bordered table-striped bg-white">
+  <thead>
+    <tr>
+      <th>類別</th>
+      <th>單號</th>
+      <th>日期</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in details %}
+    <tr>
+      <td>{{ '入庫' if d.DocType == 'IN' else '出庫' }}</td>
+      <td>{{ d.DocId }}</td>
+      <td>{{ d.DocDate }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="text-center text-muted">無單據資料</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{{ url_for('employee.list_view') }}" class="btn btn-secondary">返回</a>
+{% endblock %}

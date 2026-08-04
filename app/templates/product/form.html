@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ '新增物料' if mode == 'new' else '編輯物料' }}{% endblock %}
+{% block content %}
+<h3>{{ '新增物料' if mode == 'new' else '編輯物料 ' + product_id }}</h3>
+<form method="post" class="bg-white p-4 border rounded" style="max-width: 480px;">
+  <div class="mb-3">
+    <label class="form-label">物料編號</label>
+    {% if mode == 'new' %}
+    <input type="text" name="product_id" class="form-control" value="{{ form.product_id or '' }}" required maxlength="20">
+    {% else %}
+    <input type="text" class="form-control" value="{{ product_id }}" disabled>
+    {% endif %}
+  </div>
+  <div class="mb-3">
+    <label class="form-label">物料名稱</label>
+    <input type="text" name="product_name" class="form-control" value="{{ form.ProductName or form.product_name or '' }}" required maxlength="100">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">庫存量</label>
+    <input type="number" step="0.001" name="stock_balance" class="form-control" value="{{ form.StockBalance if form.StockBalance is defined else (form.stock_balance or 0) }}">
+  </div>
+  <button type="submit" class="btn btn-primary">儲存</button>
+  <a href="{{ url_for('product.list_view') }}" class="btn btn-secondary">取消</a>
+</form>
+{% endblock %}

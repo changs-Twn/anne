@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ '新增入庫單' if mode == 'new' else '編輯入庫單' }}{% endblock %}
+{% block content %}
+<h3>{{ '新增入庫單' if mode == 'new' else '編輯入庫單 ' + inbound_id }}</h3>
+<form method="post" class="bg-white p-4 border rounded">
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label class="form-label">日期</label>
+      <input type="date" name="inbound_date" class="form-control"
+             value="{{ form.InboundDate or form.inbound_date or today or '' }}" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">經手人</label>
+      <select name="employee_id" class="form-select" required>
+        <option value="">請選擇</option>
+        {% for e in employees %}
+        <option value="{{ e.EmployeeId }}" {% if (form.EmployeeId or form.employee_id) == e.EmployeeId %}selected{% endif %}>
+          {{ e.EmployeeName }} ({{ e.EmployeeId }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <h5>明細</h5>
+  <table class="table table-bordered bg-white">
+    <thead>
+      <tr>
+        <th style="width: 45%;">物料</th>
+        <th style="width: 30%;">數量</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="detail-lines-body">
+      {% for line in lines %}
+      <tr class="detail-line-row">
+        <td>
+          <select name="line_product_id" class="form-select" required>
+            <option value="">請選擇</option>
+            {% for p in products %}
+            <option value="{{ p.ProductId }}" {% if p.ProductId == line.ProductId %}selected{% endif %}>
+              {{ p.ProductName }} ({{ p.ProductId }})
+            </option>
+            {% endfor %}
+          </select>
+        </td>
+        <td><input type="number" step="0.001" name="line_quantity" class="form-control" value="{{ line.Quantity }}" required></td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger btn-remove-line">移除</button></td>
+      </tr>
+      {% else %}
+      <tr class="detail-line-row">
+        <td>
+          <select name="line_product_id" class="form-select" required>
+            <option value="">請選擇</option>
+            {% for p in products %}
+            <option value="{{ p.ProductId }}">{{ p.ProductName }} ({{ p.ProductId }})</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td><input type="number" step="0.001" name="line_quantity" class="form-control" required></td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger btn-remove-line">移除</button></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button type="button" id="btn-add-line" class="btn btn-sm btn-outline-secondary mb-3">+ 新增明細列</button>
+
+  <div>
+    <button type="submit" class="btn btn-primary">儲存</button>
+    <a href="{{ url_for('inbound.list_view') }}" class="btn btn-secondary">取消</a>
+  </div>
+</form>
+
+<template id="detail-line-template">
+  <tr class="detail-line-row">
+    <td>
+      <select name="line_product_id" class="form-select" required>
+        <option value="">請選擇</option>
+        {% for p in products %}
+        <option value="{{ p.ProductId }}">{{ p.ProductName }} ({{ p.ProductId }})</option>
+        {% endfor %}
+      </select>
+    </td>
+    <td><input type="number" step="0.001" name="line_quantity" class="form-control" required></td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger btn-remove-line">移除</button></td>
+  </tr>
+</template>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/detail_lines.js') }}"></script>
+{% endblock %}

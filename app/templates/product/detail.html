@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}物料明細{% endblock %}
+{% block content %}
+<h3>物料明細 - {{ row.ProductId }} {{ row.ProductName }}</h3>
+<p>目前庫存量：<strong>{{ row.StockBalance }}</strong></p>
+
+<h5 class="mt-4">入出明細（唯讀）</h5>
+<table class="table table-bordered table-striped bg-white">
+  <thead>
+    <tr>
+      <th>類別</th>
+      <th>單號</th>
+      <th>行號</th>
+      <th class="text-end">數量</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in details %}
+    <tr>
+      <td>{{ '入庫' if d.DocType == 'IN' else '出庫' }}</td>
+      <td>{{ d.DocId }}</td>
+      <td>{{ d.LineNum }}</td>
+      <td class="text-end">{{ d.Quantity }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="text-center text-muted">無明細資料</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{{ url_for('product.list_view') }}" class="btn btn-secondary">返回</a>
+{% endblock %}

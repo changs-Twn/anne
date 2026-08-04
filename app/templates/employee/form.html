@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ '新增員工' if mode == 'new' else '編輯員工' }}{% endblock %}
+{% block content %}
+<h3>{{ '新增員工' if mode == 'new' else '編輯員工 ' + employee_id }}</h3>
+<form method="post" class="bg-white p-4 border rounded" style="max-width: 480px;">
+  <div class="mb-3">
+    <label class="form-label">員工編號</label>
+    {% if mode == 'new' %}
+    <input type="text" name="employee_id" class="form-control" value="{{ form.employee_id or '' }}" required maxlength="20">
+    {% else %}
+    <input type="text" class="form-control" value="{{ employee_id }}" disabled>
+    {% endif %}
+  </div>
+  <div class="mb-3">
+    <label class="form-label">姓名</label>
+    <input type="text" name="employee_name" class="form-control" value="{{ form.EmployeeName or form.employee_name or '' }}" required maxlength="50">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input type="email" name="email" class="form-control" value="{{ form.Email or form.email or '' }}" maxlength="255">
+  </div>
+  <button type="submit" class="btn btn-primary">儲存</button>
+  <a href="{{ url_for('employee.list_view') }}" class="btn btn-secondary">取消</a>
+</form>
+{% endblock %}

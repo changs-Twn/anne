@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}入庫管理{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>入庫管理</h3>
+  <a class="btn btn-primary" href="{{ url_for('inbound.create_view') }}">+ 新增入庫單</a>
+</div>
+<table class="table table-striped table-bordered table-mini-erp bg-white">
+  <thead>
+    <tr>
+      <th>單號</th>
+      <th>日期</th>
+      <th>經手人</th>
+      <th class="text-end">明細筆數</th>
+      <th style="width: 260px;">操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.InboundId }}</td>
+      <td>{{ r.InboundDate }}</td>
+      <td>{{ r.EmployeeName }} ({{ r.EmployeeId }})</td>
+      <td class="text-end">{{ r.LineCount }}</td>
+      <td>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('inbound.edit_view', inbound_id=r.InboundId) }}">編輯</a>
+        <a class="btn btn-sm btn-outline-success" href="{{ url_for('inbound.export_view', inbound_id=r.InboundId) }}">匯出Excel</a>
+        <form action="{{ url_for('inbound.delete_view', inbound_id=r.InboundId) }}" method="post" class="d-inline"
+              onsubmit="return confirm('確定要刪除入庫單 {{ r.InboundId }} 嗎？（將一併刪除其明細）');">
+          <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

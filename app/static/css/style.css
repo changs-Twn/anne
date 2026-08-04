@@ -1,0 +1,11 @@
+body {
+  background-color: #f5f6f8;
+}
+
+table.table-mini-erp th {
+  white-space: nowrap;
+}
+
+.detail-line-row .btn-remove-line {
+  padding: 0.15rem 0.5rem;
+}
