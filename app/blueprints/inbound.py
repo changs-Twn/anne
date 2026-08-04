@@ -119,7 +119,12 @@ def edit_view(inbound_id):
 
 @bp.route("/<inbound_id>/delete", methods=["POST"])
 def delete_view(inbound_id):
+    # 明細要先手動刪除、header 最後刪：DB 的 trg_InboundDetail_DailyClosing 在算日結餘額 delta 時
+    # 會 JOIN InboundHeader 取日期，若靠 FK CASCADE 讓 header 先被刪掉，
+    # 明細的 AFTER DELETE trigger 觸發時 header 已經不存在，JOIN 會是空集合，
+    # 日結餘額表就不會被回沖（驗證過的真實案例，見 CLAUDE.md「已知坑」）。
     with db_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM InboundDetail WHERE InboundId = ?", (inbound_id,))
         cur.execute("DELETE FROM InboundHeader WHERE InboundId = ?", (inbound_id,))
     flash(f"入庫單 {inbound_id} 已刪除", "success")
     return redirect(url_for("inbound.list_view"))

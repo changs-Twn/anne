@@ -119,7 +119,9 @@ def edit_view(outbound_id):
 
 @bp.route("/<outbound_id>/delete", methods=["POST"])
 def delete_view(outbound_id):
+    # 明細要先手動刪除、header 最後刪：理由同 inbound.delete_view，見 CLAUDE.md「已知坑」。
     with db_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM OutboundDetail WHERE OutboundId = ?", (outbound_id,))
         cur.execute("DELETE FROM OutboundHeader WHERE OutboundId = ?", (outbound_id,))
     flash(f"出庫單 {outbound_id} 已刪除", "success")
     return redirect(url_for("outbound.list_view"))

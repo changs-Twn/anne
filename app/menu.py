@@ -18,6 +18,7 @@ MENU = [
         "children": [
             {"title": "入出單據", "endpoint": "reports.inout_header"},
             {"title": "入出明細", "endpoint": "reports.inout_detail"},
+            {"title": "日結餘額表", "endpoint": "reports.daily_closing"},
         ],
     },
 ]

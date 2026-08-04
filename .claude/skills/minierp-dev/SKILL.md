@@ -20,7 +20,13 @@ description: Use when adding or modifying modules in this Mini ERP Flask app (Pr
 1. header+detail 一起在同一個表單送出，明細列用 `app/static/js/detail_lines.js`（`detail-lines-body` + `<template id="detail-line-template">` 的 pattern，照抄 `inbound/form.html`）。
 2. 新增/編輯都要包在同一個 DB transaction 裡：`with db_cursor(commit=True) as cur:`，先處理 header，再處理 detail。編輯採「刪明細重插」（`DELETE FROM xxxDetail WHERE ...` 再重新 INSERT），不要做逐筆 diff。
 3. 單號用 `app/utils/ids.generate_doc_id(table, id_column, prefix, date_obj)` 產生，不要讓使用者手動輸入單號。
-4. 刪除只刪 header，明細要確認 FK 是 `CASCADE`（目前 InboundDetail/OutboundDetail 對 Header 是 CASCADE）才能省略手動刪明細；如果之後新增別的交易表沒有 CASCADE，要自己先刪明細再刪 header。
+4. **刪除一律先手動 `DELETE FROM xxxDetail WHERE ...`，header 放最後刪**——不要靠 FK 的
+   `ON DELETE CASCADE` 讓刪 header 帶著刪明細。雖然 InboundDetail/OutboundDetail 對 Header
+   是 CASCADE，但 `trg_InboundDetail_DailyClosing`/`trg_OutboundDetail_DailyClosing` 算日結
+   餘額 delta 時要 `JOIN` 回 Header 拿日期；CASCADE 情境下明細的 `AFTER DELETE` trigger 觸發時
+   header 那一列已經被刪掉了，JOIN 對不到、delta 算成空的，`InventoryDailyClosing` 就不會被
+   回沖，留下錯誤餘額（實測驗證過，見 `CLAUDE.md`「已知坑」）。先刪明細時 header 還在，
+   trigger 才能正確算出負的 delta。
 5. 一定要提供 `/<id>/export` 路由，用 `app/utils/excel_export.export_document()` 產生「單據式」Excel（合併標題 + 單頭欄位 + 明細表格），不是平面表格。
 
 ## 新增一個「報表查詢」模組（像 Reports）

@@ -49,6 +49,13 @@ trigger 會自動算好 Opening/Inbound/Outbound/Closing 並遞延到後面的�
 - **pymssql 也會亂碼**：即使設定 `charset`，FreeTDS 對這個 DB 的 Unicode 轉換仍不正確；改用
   `pyodbc` + `ODBC Driver 18 for SQL Server` 才會正確顯示中文。
 - **不要對 biz00（共用範本）下寫入指令**，所有練習/測試資料一律建立在自己的 `biz_anne`。
+- **InventoryDailyClosing 的 CASCADE 刪除坑**：`trg_InboundDetail_DailyClosing`/`trg_OutboundDetail_DailyClosing`
+  算 delta 時會 `JOIN InboundHeader`/`OutboundHeader` 取日期。如果靠 FK 的 `ON DELETE CASCADE`
+  讓刪 header 帶著刪明細，明細的 `AFTER DELETE` trigger 觸發時 header 那一列已經被刪掉了，
+  JOIN 對不到東西、算出空 delta，日結餘額表就不會被回沖，資料會悄悄留下錯誤餘額（實測驗證過的
+  真實案例，不是猜測）。**因此 Mini ERP app 的 inbound/outbound 刪除一律先手動
+  `DELETE FROM xxxDetail`、header 放最後刪**（見 `app/blueprints/inbound.py` /
+  `outbound.py` 的 `delete_view()`），不要改回單純刪 header 靠 CASCADE。
 
 ---
 

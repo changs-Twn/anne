@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}日結餘額表{% endblock %}
+{% block content %}
+<h3>日結餘額表查詢</h3>
+<p class="text-muted">資料來源：<code>v_InventoryDailyClosing</code>，每次入庫/出庫異動（包含補登較早日期的單據）都會由資料庫 trigger 自動重算期初/期末餘額。</p>
+<form method="get" class="row g-2 align-items-end bg-white p-3 border rounded mb-3">
+  <div class="col-auto">
+    <label class="form-label">日期從</label>
+    <input type="date" name="date_from" class="form-control" value="{{ args.get('date_from', '') }}">
+  </div>
+  <div class="col-auto">
+    <label class="form-label">日期到</label>
+    <input type="date" name="date_to" class="form-control" value="{{ args.get('date_to', '') }}">
+  </div>
+  <div class="col-auto">
+    <label class="form-label">物料</label>
+    <select name="product_id" class="form-select">
+      <option value="">全部</option>
+      {% for p in products %}
+      <option value="{{ p.ProductId }}" {% if args.get('product_id') == p.ProductId %}selected{% endif %}>{{ p.ProductName }} ({{ p.ProductId }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary">查詢</button>
+    <a class="btn btn-success" href="{{ url_for('reports.daily_closing_export', **args) }}">匯出Excel</a>
+  </div>
+</form>
+
+<table class="table table-striped table-bordered bg-white">
+  <thead>
+    <tr>
+      <th>日期</th>
+      <th>物料編號</th>
+      <th>物料名稱</th>
+      <th class="text-end">期初庫存</th>
+      <th class="text-end">入庫數量</th>
+      <th class="text-end">出庫數量</th>
+      <th class="text-end">期末庫存</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.ClosingDate }}</td>
+      <td>{{ r.ProductId }}</td>
+      <td>{{ r.ProductName }}</td>
+      <td class="text-end">{{ r.OpeningQuantity }}</td>
+      <td class="text-end">{{ r.InboundQuantity }}</td>
+      <td class="text-end">{{ r.OutboundQuantity }}</td>
+      <td class="text-end">{{ r.ClosingQuantity }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="text-center text-muted">查無資料</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
