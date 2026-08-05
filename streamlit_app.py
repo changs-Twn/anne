@@ -1,5 +1,3 @@
-import os
-
 import streamlit as st
 
 from streamlit_common.config import bootstrap_db_env
@@ -9,18 +7,6 @@ bootstrap_db_env()
 
 from streamlit_common import auth  # noqa: E402  (must follow bootstrap_db_env)
 from streamlit_pages import employee, inbound, outbound, product, reports  # noqa: E402
-
-# TEMPORARY debug panel for diagnosing the 18456 login-failed error against the
-# real DB - shows only length/masked edges of DB_PWD, never the real value.
-# Remove once the secrets mismatch is confirmed/fixed.
-with st.expander("🔧 Debug: DB config as received by this deploy", expanded=True):
-    _pwd = os.environ.get("DB_PWD", "")
-    _masked = (_pwd[0] + "*" * (len(_pwd) - 2) + _pwd[-1]) if len(_pwd) > 2 else "*" * len(_pwd)
-    st.write(f"DB_SERVER: `{os.environ.get('DB_SERVER', '')}`")
-    st.write(f"DB_NAME: `{os.environ.get('DB_NAME', '')}`")
-    st.write(f"DB_UID: `{os.environ.get('DB_UID', '')}`")
-    st.write(f"DB_PWD length: `{len(_pwd)}` (expected 8), masked: `{_masked}`")
-    st.write(f"DB_PWD has leading/trailing whitespace: `{_pwd != _pwd.strip()}`")
 
 auth.require_login()
 auth.render_sidebar_user()
