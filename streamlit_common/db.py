@@ -25,6 +25,12 @@ def _connect():
         password=os.environ["DB_PWD"],
         database=os.environ["DB_NAME"],
         charset="UTF-8",
+        # FreeTDS's default TDS version is older than what this SQL Server 2022 instance
+        # expects for SQL-auth logins, and pymssql doesn't request encryption by default
+        # the way app/config.py's pyodbc connection string does (Encrypt=yes) - both can
+        # surface as a generic 18456 "Login failed" rather than a protocol-level error.
+        tds_version="7.4",
+        encryption="request",
     )
 
 
