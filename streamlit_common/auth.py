@@ -1,7 +1,7 @@
 import streamlit as st
 
 from app.blueprints.employee import DEFAULT_PASSWORD, PASSWORD_RE
-from app.db import execute, query_one
+from streamlit_common.db import execute, query_one
 
 SUPER_ID = "Super"
 SUPER_PASSWORD = "Super"

@@ -3,9 +3,8 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from app.db import db_cursor, query_all, query_one
 from app.utils.excel_export import export_document
-from app.utils.ids import generate_doc_id
+from streamlit_common.db import db_cursor, generate_doc_id, query_all, query_one
 from streamlit_common.ui import confirm_delete_button
 
 EMPTY_LINES = pd.DataFrame([{"ProductId": None, "Quantity": None}])

@@ -1,7 +1,7 @@
-import pyodbc
+import pymssql
 import streamlit as st
 
-from app.db import execute, query_all, query_one
+from streamlit_common.db import execute, query_all, query_one
 from streamlit_common.ui import confirm_delete_button
 
 
@@ -51,7 +51,7 @@ def _new_view():
                 "INSERT INTO Product (ProductId, ProductName, StockBalance) VALUES (?, ?, ?)",
                 (product_id, name, stock),
             )
-        except pyodbc.IntegrityError:
+        except pymssql.IntegrityError:
             st.error(f"物料編號 {product_id} 已存在")
             return
         st.success("新增成功")
@@ -123,7 +123,7 @@ def _detail_view(product_id):
             execute("DELETE FROM Product WHERE ProductId = ?", (product_id,))
             st.success("刪除成功")
             _go("list")
-        except pyodbc.IntegrityError:
+        except pymssql.IntegrityError:
             st.error("此物料仍被其他資料參照，無法刪除")
 
 

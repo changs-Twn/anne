@@ -1,8 +1,8 @@
-import pyodbc
+import pymssql
 import streamlit as st
 
 from app.blueprints.employee import DEFAULT_PASSWORD, PASSWORD_RE
-from app.db import execute, query_all, query_one
+from streamlit_common.db import execute, query_all, query_one
 from streamlit_common.ui import confirm_delete_button
 
 
@@ -74,7 +74,7 @@ def _new_view():
                 "INSERT INTO Employee (EmployeeId, EmployeeName, Email, Password) VALUES (?, ?, ?, ?)",
                 (employee_id, name, email, password),
             )
-        except pyodbc.IntegrityError:
+        except pymssql.IntegrityError:
             st.error(f"員工編號 {employee_id} 已存在")
             return
         st.success("新增成功")
@@ -169,7 +169,7 @@ def _detail_view(employee_id):
                 st.session_state.clear()
                 st.rerun()
             _go("list")
-        except pyodbc.IntegrityError:
+        except pymssql.IntegrityError:
             st.error("此員工仍被其他資料參照，無法刪除")
 
 

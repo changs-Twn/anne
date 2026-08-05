@@ -1,12 +1,98 @@
 import streamlit as st
 
-from app.blueprints.reports import (
-    _run_closing_query,
-    _run_detail_query,
-    _run_header_query,
-)
-from app.db import query_all
 from app.utils.excel_export import export_report
+from streamlit_common.db import query_all
+
+# Mirrors app/blueprints/reports.py's filter builders / query runners exactly,
+# but sourced from streamlit_common.db (pymssql) instead of app.db (pyodbc) —
+# see streamlit_common/db.py for why the Streamlit app can't share app.db.
+
+
+def _header_filter(args):
+    where = ["1=1"]
+    params = []
+    if args.get("date_from"):
+        where.append("h.DocDate >= ?")
+        params.append(args["date_from"])
+    if args.get("date_to"):
+        where.append("h.DocDate <= ?")
+        params.append(args["date_to"])
+    if args.get("doc_type"):
+        where.append("h.DocType = ?")
+        params.append(args["doc_type"])
+    if args.get("employee_id"):
+        where.append("h.EmployeeId = ?")
+        params.append(args["employee_id"])
+    return " AND ".join(where), params
+
+
+def _detail_filter(args):
+    where = ["1=1"]
+    params = []
+    if args.get("date_from"):
+        where.append("h.DocDate >= ?")
+        params.append(args["date_from"])
+    if args.get("date_to"):
+        where.append("h.DocDate <= ?")
+        params.append(args["date_to"])
+    if args.get("doc_type"):
+        where.append("d.DocType = ?")
+        params.append(args["doc_type"])
+    if args.get("product_id"):
+        where.append("d.ProductId = ?")
+        params.append(args["product_id"])
+    return " AND ".join(where), params
+
+
+def _closing_filter(args):
+    where = ["1=1"]
+    params = []
+    if args.get("date_from"):
+        where.append("ClosingDate >= ?")
+        params.append(args["date_from"])
+    if args.get("date_to"):
+        where.append("ClosingDate <= ?")
+        params.append(args["date_to"])
+    if args.get("product_id"):
+        where.append("ProductId = ?")
+        params.append(args["product_id"])
+    return " AND ".join(where), params
+
+
+def _run_header_query(args):
+    where_sql, params = _header_filter(args)
+    sql = f"""
+        SELECT h.DocType, h.DocId, h.DocDate, h.EmployeeId, e.EmployeeName
+        FROM v_InoutHeader h
+        JOIN Employee e ON e.EmployeeId = h.EmployeeId
+        WHERE {where_sql}
+        ORDER BY h.DocDate DESC, h.DocId DESC
+    """
+    return query_all(sql, params)
+
+
+def _run_detail_query(args):
+    where_sql, params = _detail_filter(args)
+    sql = f"""
+        SELECT d.DocType, d.DocId, h.DocDate, d.LineNum, d.ProductId, d.ProductName, d.Quantity
+        FROM v_InoutDetail d
+        JOIN v_InoutHeader h ON h.DocType = d.DocType AND h.DocId = d.DocId
+        WHERE {where_sql}
+        ORDER BY h.DocDate DESC, d.DocId DESC, d.LineNum
+    """
+    return query_all(sql, params)
+
+
+def _run_closing_query(args):
+    where_sql, params = _closing_filter(args)
+    sql = f"""
+        SELECT ClosingDate, ProductId, ProductName, OpeningQuantity, InboundQuantity, OutboundQuantity, ClosingQuantity
+        FROM v_InventoryDailyClosing
+        WHERE {where_sql}
+        ORDER BY ClosingDate DESC, ProductId
+    """
+    return query_all(sql, params)
+
 
 DOC_TYPE_LABELS = {"": "全部", "IN": "入庫", "OUT": "出庫"}
 

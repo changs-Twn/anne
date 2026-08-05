@@ -9,12 +9,14 @@ _REQUIRED = ("DB_SERVER", "DB_NAME", "DB_UID", "DB_PWD")
 
 
 def bootstrap_db_env():
-    """Populate os.environ from st.secrets before app.config / app.db are imported.
+    """Populate os.environ from st.secrets before streamlit_common.db / streamlit_pages
+    are imported (streamlit_common/db.py reads DB_SERVER/DB_NAME/DB_UID/DB_PWD from
+    os.environ, same as app/config.py does for the Flask app's pyodbc connection).
 
-    app/config.py reads os.environ[...] at import time and is reused unchanged from the
-    Flask app; .env (python-dotenv, local dev) already populates os.environ, so st.secrets
+    .env (python-dotenv, local dev) already populates os.environ, so st.secrets
     (Streamlit Cloud's Secrets panel) is only consulted for whatever .env didn't provide.
-    Must run before any `from app.db import ...` / `from streamlit_pages... import ...`.
+    Must run before any `from streamlit_common.db import ...` / `from streamlit_pages...
+    import ...`.
     """
     try:
         secrets = st.secrets

@@ -12,6 +12,12 @@ auth.require_login()
 auth.render_sidebar_user()
 auth.render_password_prompt()
 
+st.sidebar.warning(
+    "⚠️ 此版本透過 pymssql/FreeTDS 連線（Streamlit Cloud 無法安裝 ODBC Driver 18）。"
+    "中文欄位（物料/員工名稱）可能顯示亂碼，這是已知限制，非本次修改造成的資料損毀。",
+    icon="⚠️",
+)
+
 pages = {
     "主數據": [
         st.Page(product.render, title="物料管理", url_path="product"),
